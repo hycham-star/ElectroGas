@@ -1,6 +1,6 @@
 # ElectroGas — Calculateur Sonelgaz
 
-Application Android native en français, hors ligne, créée à partir de `Calculateur_Facture_Sonelgaz.xlsx` fourni par l’utilisateur. Version **1.1** : carnet de factures photographiées ou importées.
+Application Android native en français, hors ligne, créée à partir de `Calculateur_Facture_Sonelgaz.xlsx` fourni par l’utilisateur. Version **1.2** : électricité et gaz peuvent être activés séparément ; le carnet de factures de la version 1.1 reste disponible.
 
 ## Installer
 
@@ -10,7 +10,7 @@ Les fichiers installables se trouvent dans `downloads/`, avec leurs sommes SHA-2
 
 Transférez `ElectroGas.apk` sur un téléphone Android 6.0 ou plus récent, ouvrez-le et autorisez l’installation depuis cette source si Android le demande. Aucun compte, connexion Internet ou permission d’accès aux fichiers n’est nécessaire. L’APK est signé avec un certificat de développement, pas une identité de publication Google Play.
 
-La version 1.1 utilise la même clé que la version 1.0 : installez-la **par-dessus l’ancienne version** pour conserver vos données. N’effacez pas les données de l’application et ne la désinstallez pas pour effectuer la mise à jour.
+La version 1.2 utilise la même clé que les versions 1.0 et 1.1 : installez-la **par-dessus l’ancienne version** pour conserver vos données. N’effacez pas les données de l’application et ne la désinstallez pas pour effectuer la mise à jour.
 
 ## Utilisation
 
@@ -20,6 +20,14 @@ La version 1.1 utilise la même clé que la version 1.0 : installez-la **par-des
 4. **Total** : HT, TVA, total TTC, moyenne quotidienne et détail des quatre tranches. Le bouton Partager utilise le menu Android.
 
 Le montant se met à jour pendant la saisie. Les virgules et les points décimaux sont acceptés. Un index décroissant, une durée nulle ou une donnée invalide est refusé. Les saisies restent enregistrées localement. Le bouton de réinitialisation demande confirmation avant de rétablir les valeurs du classeur.
+
+### Logement sans gaz ou sans électricité
+
+Dans l’onglet **Gaz**, décochez **J’ai le gaz dans ce logement** si le client n’a pas de gaz. L’électricité seule peut alors être calculée, sans saisir de PCS ou d’index gaz. La consommation, l’abonnement, la TVA du gaz et le RGPE sont exclus du total et du partage.
+
+Le même choix existe dans l’onglet **Électricité** pour une facture de gaz seule. L’énergie électrique, l’abonnement, la TVA correspondante, le droit fixe lié à la consommation électrique, le soutien État électrique et le REPE sont alors exclus. Les frais communs (habitation, prestations, timbre et durée) restent à vérifier et saisir selon la facture réelle.
+
+Le choix des services est mémorisé. Les anciennes saisies d’un service désactivé sont conservées pour une éventuelle réactivation, mais ne sont ni validées ni facturées. Une consommation de **zéro pour un service activé** conserve son abonnement : pour un service absent, il faut décocher sa case. Au moins un service doit être activé pour calculer une estimation ; le carnet de factures reste accessible dans tous les cas. Par défaut, les deux services restent activés pour préserver les estimations existantes lors de la mise à jour. La réinitialisation des valeurs d’exemple conserve le choix des services.
 
 ## Carnet de factures
 
@@ -73,7 +81,7 @@ La clé de développement est créée dans le répertoire d’outils, hors du d�
 
 ## Validation
 
-`tests/workbook-results.tsv` contient les valeurs mises en cache des **48 cellules avec formule** du classeur fourni. Les tests comparent les résultats Java à toutes ces valeurs, puis vérifient les seuils de tranches, la taxe aux bornes exactes, les consommations nulles, les abonnements, les frais, les réductions et les entrées invalides : **106 vérifications**.
+`tests/workbook-results.tsv` contient les valeurs mises en cache des **48 cellules avec formule** du classeur fourni. Les tests comparent les résultats Java à toutes ces valeurs avec les deux services activés, puis vérifient les seuils de tranches, la taxe aux bornes exactes, les consommations nulles, les abonnements, les frais, les réductions, les entrées invalides et les calculs avec un seul service : **128 vérifications**.
 
 ```sh
 java -jar /workspace/android-tools/ecj.jar -17 -encoding UTF-8 -proc:none \
@@ -90,7 +98,7 @@ bash build.sh
 ELECTROGAS_ADB=/chemin/vers/adb bash tests/run_android_tests.sh
 ```
 
-L’instrumentation Android teste le stockage privé, le quota, les modifications à la limite, les PDF, la sauvegarde et la restauration, les archives invalides, le fournisseur de fichiers et les parcours UI avec caméra / sélection de PDF simulées. Les données de test sont isolées ; une facture UI temporaire identifiée est créée puis supprimée. La caméra physique et le sélecteur système réel doivent également être essayés sur téléphone avant publication commerciale.
+L’instrumentation Android lance deux suites : les services optionnels (champs vides ignorés lorsqu’un service est désactivé, récapitulatif et partage, réactivation et mémorisation) et le carnet (stockage privé, quota, modifications à la limite, PDF, sauvegarde et restauration, archives invalides, fournisseur de fichiers et parcours UI avec caméra / sélection de PDF simulées). Les préférences du calculateur sont temporairement modifiées puis restaurées. Les fichiers de test du carnet sont isolés ; une facture UI temporaire identifiée est créée puis supprimée. La caméra physique et le sélecteur système réel doivent également être essayés sur téléphone avant publication commerciale.
 
 Ancien test UI du calculateur (dépend du service d’accessibilité de l’émulateur) :
 
@@ -102,8 +110,9 @@ Ce test installe l’APK et **efface ses données sur l’appareil de test**. Il
 
 ### Résultats observés dans l’environnement de création
 
+- Version 1.2 : **20 scénarios Android des services optionnels réussis** sur Android 9 (champs vides d’un service désactivé, absence d’abonnement et de frais associés, récapitulatif et partage, réactivation et choix mémorisé).
 - Version 1.1 : **42 contrôles du carnet réussis sur Android 9**, comprenant copie privée, quota et modifications à la limite, export / import PDF, restauration additive et idempotente, rejet des archives invalides et des chemins dangereux, lecture seule des exports, réouverture photo sans troncature, caméra et sélecteur PDF simulés dans l’UI, affichage avec zoom et relecture des données enregistrées.
-- 106 vérifications de calcul réussies, dont les 48 cellules avec formule du classeur.
+- 128 vérifications de calcul réussies, dont les 48 cellules avec formule du classeur. Avec les valeurs d’exemple et les frais communs par défaut : électricité seule **531,76 DA**, gaz seul **2 825,25 DA**, les deux **3 157,01 DA**.
 - Signature APK et alignement vérifiés ; installation réussie sur un émulateur Android 9.
 - Les quatre pages, le total initial et le recalcul ont été exercés. Le passage de l’index électrique 55 320 à 55 331 donne **3 178,34 DA**.
 - L’index décroissant affiche un avertissement et masque le montant. Après correction, arrêt forcé et relancement, l’index **55 331** et le total **3 178,34 DA** ont été confirmés visuellement.

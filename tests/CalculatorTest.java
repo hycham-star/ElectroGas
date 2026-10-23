@@ -6,7 +6,7 @@ public class CalculatorTest {
     private static int checks;
     private static void near(double actual,double expected,String label) {
         checks++;
-        if(Math.abs(actual-expected)>Math.max(1e-8,Math.abs(expected)*1e-10))throw new AssertionError(label+": "+actual+" != "+expected);
+        if(!Double.isFinite(actual)||Math.abs(actual-expected)>Math.max(1e-8,Math.abs(expected)*1e-10))throw new AssertionError(label+": "+actual+" != "+expected);
     }
     private static void bad(double[] v,String label) {
         checks++;try {Calculator.calculate(v);}catch(IllegalArgumentException e){return;}throw new AssertionError(label);
@@ -54,6 +54,22 @@ public class CalculatorTest {
         for(int index:new int[]{3,5,6,10,17}){v=Calculator.DEFAULTS.clone();v[index]=0;bad(v,"Zero divisor or multiplier");}
         v=Calculator.DEFAULTS.clone();v[12]=-1;bad(v,"Negative tax");
         v=Calculator.DEFAULTS.clone();v[0]=Double.NaN;bad(v,"NaN input");v[0]=Double.POSITIVE_INFINITY;bad(v,"Infinite input");
+        v=Calculator.DEFAULTS.clone();r=Calculator.calculate(v,true,false);
+        near(r.total,531.760662,"Electricity only total");near(r.gas.ht,0,"No gas subscription or energy");near(r.gasM3,0,"No gas volume");near(r.base19,0,"No gas high VAT");near(r.vat9,25.328862,"Electricity VAT only");
+        near(r.gasEnabled?1:0,0,"Gas flag");near(r.electricityEnabled?1:0,1,"Electricity flag");
+        for(int i=6;i<=10;i++)v[i]=Double.NaN;v[15]=Double.POSITIVE_INFINITY;
+        r=Calculator.calculate(v,true,false);near(r.total,531.760662,"Invalid inactive gas fields ignored");near(Double.isNaN(v[6])?1:0,1,"Caller values are preserved");
+        v=Calculator.DEFAULTS.clone();r=Calculator.calculate(v,false,true);
+        near(r.total,2825.250215,"Gas only total");near(r.electricity.ht,0,"No electricity subscription or energy");near(r.duty,0,"No electricity duty");near(r.vat9,64.882125,"Gas VAT 9 percent");near(r.vat19,293.69459,"Gas VAT 19 percent");
+        for(int i=0;i<v.length;i++)if(!Calculator.isInputActive(i,false,true))v[i]=Double.NaN;
+        near(Calculator.calculate(v,false,true).total,2825.250215,"Invalid inactive electricity, support, REPE and duty ignored");
+        v=Calculator.DEFAULTS.clone();v[13]=-65;v[14]=30;v[15]=67;
+        near(Calculator.calculate(v,true,false).total,496.760662,"Electricity support and REPE retained, RGPE excluded");near(Calculator.calculate(v,false,true).total,2892.250215,"Gas RGPE retained, electricity adjustments excluded");
+        v=Calculator.DEFAULTS.clone();v[1]=v[2];near(Calculator.calculate(v,true,false).electricity.fixed,78.66,"Zero active consumption still has subscription");
+        v=Calculator.DEFAULTS.clone();v[11]=10;v[12]=20;v[16]=5;near(Calculator.calculate(v,true,false).total,366.760662,"Shared fees remain user controlled");
+        checks++;try{Calculator.calculate(Calculator.DEFAULTS,false,false);throw new AssertionError("No service must be rejected");}catch(IllegalArgumentException expected){}
+        v=Calculator.DEFAULTS.clone();v[2]=v[1]-1;checks++;try{Calculator.calculate(v,true,false);throw new AssertionError("Invalid active electricity must be rejected");}catch(IllegalArgumentException expected){}
+        v=Calculator.DEFAULTS.clone();v[8]=v[7]-1;checks++;try{Calculator.calculate(v,false,true);throw new AssertionError("Invalid active gas must be rejected");}catch(IllegalArgumentException expected){}
         System.out.println("PASS: "+checks+" checks, including all "+fixtureCount+" cached workbook formulas and tariff boundaries.");
     }
 }

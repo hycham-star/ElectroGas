@@ -2,4 +2,5 @@
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
     <application android:label="ElectroGas tests" />
     <instrumentation android:name="dz.electrogas.tests.InvoiceTests" android:targetPackage="dz.electrogas" android:functionalTest="true" />
+    <instrumentation android:name="dz.electrogas.tests.ServiceTests" android:targetPackage="dz.electrogas" android:functionalTest="true" />
 </manifest>
