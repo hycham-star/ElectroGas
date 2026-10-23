@@ -1,6 +1,6 @@
 # ElectroGas — Calculateur Sonelgaz
 
-Application Android native en français, hors ligne, créée à partir de `Calculateur_Facture_Sonelgaz.xlsx` fourni par l’utilisateur.
+Application Android native en français, hors ligne, créée à partir de `Calculateur_Facture_Sonelgaz.xlsx` fourni par l’utilisateur. Version **1.1** : carnet de factures photographiées ou importées.
 
 ## Installer
 
@@ -10,6 +10,8 @@ Les fichiers installables se trouvent dans `downloads/`, avec leurs sommes SHA-2
 
 Transférez `ElectroGas.apk` sur un téléphone Android 6.0 ou plus récent, ouvrez-le et autorisez l’installation depuis cette source si Android le demande. Aucun compte, connexion Internet ou permission d’accès aux fichiers n’est nécessaire. L’APK est signé avec un certificat de développement, pas une identité de publication Google Play.
 
+La version 1.1 utilise la même clé que la version 1.0 : installez-la **par-dessus l’ancienne version** pour conserver vos données. N’effacez pas les données de l’application et ne la désinstallez pas pour effectuer la mise à jour.
+
 ## Utilisation
 
 1. **Électricité** : index en kWh, coefficient de lecture, puissance et abonnement.
@@ -18,6 +20,29 @@ Transférez `ElectroGas.apk` sur un téléphone Android 6.0 ou plus récent, ouv
 4. **Total** : HT, TVA, total TTC, moyenne quotidienne et détail des quatre tranches. Le bouton Partager utilise le menu Android.
 
 Le montant se met à jour pendant la saisie. Les virgules et les points décimaux sont acceptés. Un index décroissant, une durée nulle ou une donnée invalide est refusé. Les saisies restent enregistrées localement. Le bouton de réinitialisation demande confirmation avant de rétablir les valeurs du classeur.
+
+## Carnet de factures
+
+Depuis **Mes factures · Photos et historique** :
+
+1. Ajoutez une facture et renseignez son titre, sa date, sa période, son logement et, si vous le souhaitez, son montant réel et son statut payé.
+2. Photographiez une ou plusieurs pages avec l’application photo du téléphone, ou importez des images / PDF depuis le sélecteur Android. Une copie privée est créée : supprimer le document d’origine de la galerie n’efface pas la facture enregistrée.
+3. Appuyez sur **Enregistrer la facture**. Un brouillon non enregistré n’est pas une sauvegarde.
+4. Recherchez une facture par titre, année, logement, période ou statut ; ouvrez les documents avec zoom, modifiez la fiche ou partagez / enregistrez une copie PDF.
+
+Limites : 10 documents et 30 pages par facture, 20 Mo par import, 50 Mo au total par facture. Les photos sont orientées d’après leurs métadonnées EXIF et recopiées en JPEG avec une résolution maximale de 3 072 pixels sur le grand côté. Les PDF protégés par mot de passe ne sont pas pris en charge. Aucune lecture automatique OCR : les informations sont saisies manuellement. Le marquage « payée » est une indication de l’utilisateur, pas une preuve de paiement.
+
+### Sauvegarde et restauration
+
+**Exporter une sauvegarde ZIP** conserve les documents et leurs fiches, dans l’emplacement choisi via Android : PC, stockage externe ou fournisseur cloud personnel disponible dans le sélecteur. Il n’y a aucun transfert automatique ni serveur ElectroGas. Pour se protéger contre la perte du téléphone, conserver le ZIP ailleurs que sur ce téléphone. Ce ZIP n’est pas chiffré par l’application : choisir un emplacement privé.
+
+**Restaurer une sauvegarde ZIP** vérifie les documents avant d’ajouter les nouvelles factures. Les identifiants déjà présents sont ignorés, sans écraser les modifications locales. Une sauvegarde incomplète, mal formée ou comportant des chemins inattendus est refusée sans remplacer l’historique. Limites : 512 Mo par sauvegarde et 500 factures par restauration. La désinstallation / l’effacement des données Android supprime l’historique local : exporter d’abord une sauvegarde.
+
+### Gratuit et Premium
+
+Cette version permet **5 factures gratuites**. La modification, la consultation, le partage, l’export et la restauration restent accessibles à la limite. Les factures restaurées restent consultables même si elles sont plus de cinq ; seul l’ajout d’une nouvelle facture est alors limité.
+
+**L’achat Premium n’est pas activé.** L’écran présente le futur historique illimité mais ne simule pas de paiement ou de déverrouillage payant. `InvoiceStore.isPremium()` renvoie actuellement `false`. Avant de vendre : configurer le produit Google Play, intégrer et vérifier les achats / restaurations de droits. Aucun compte Play, prix ou identifiant de produit n’a été inventé. Pas de sauvegarde cloud automatique ni d’OCR dans cette version.
 
 ## Fidélité au classeur
 
@@ -58,7 +83,16 @@ java -cp build/test-classes dz.electrogas.CalculatorTest
 
 La vérification cryptographique et l’alignement sont également contrôlés par `build.sh`. Les essais sur émulateur ou appareil doivent être distingués de ces tests de calcul.
 
-Avec un appareil de test connecté (ou un émulateur déjà démarré) :
+Tests du carnet sur un appareil / émulateur Android 8.0 ou plus récent avec au moins une place libre dans l’historique de test :
+
+```sh
+bash build.sh
+ELECTROGAS_ADB=/chemin/vers/adb bash tests/run_android_tests.sh
+```
+
+L’instrumentation Android teste le stockage privé, le quota, les modifications à la limite, les PDF, la sauvegarde et la restauration, les archives invalides, le fournisseur de fichiers et les parcours UI avec caméra / sélection de PDF simulées. Les données de test sont isolées ; une facture UI temporaire identifiée est créée puis supprimée. La caméra physique et le sélecteur système réel doivent également être essayés sur téléphone avant publication commerciale.
+
+Ancien test UI du calculateur (dépend du service d’accessibilité de l’émulateur) :
 
 ```sh
 ELECTROGAS_ADB=/chemin/vers/adb python3 tests/android_smoke.py
@@ -68,6 +102,7 @@ Ce test installe l’APK et **efface ses données sur l’appareil de test**. Il
 
 ### Résultats observés dans l’environnement de création
 
+- Version 1.1 : **42 contrôles du carnet réussis sur Android 9**, comprenant copie privée, quota et modifications à la limite, export / import PDF, restauration additive et idempotente, rejet des archives invalides et des chemins dangereux, lecture seule des exports, réouverture photo sans troncature, caméra et sélecteur PDF simulés dans l’UI, affichage avec zoom et relecture des données enregistrées.
 - 106 vérifications de calcul réussies, dont les 48 cellules avec formule du classeur.
 - Signature APK et alignement vérifiés ; installation réussie sur un émulateur Android 9.
 - Les quatre pages, le total initial et le recalcul ont été exercés. Le passage de l’index électrique 55 320 à 55 331 donne **3 178,34 DA**.

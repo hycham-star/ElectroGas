@@ -74,6 +74,7 @@ public class MainActivity extends Activity {
         header.addView(text("Estimation Sonelgaz · 54M / 23M",13,0xffbdcfd0,false));
         amount=text("",32,Color.WHITE,true);header.addView(amount);
         status=text("",12,0xffbdcfd0,false);header.addView(status);
+        Button archive=button("Mes factures · Photos et historique",false);archive.setTag("main.invoices");header.addView(archive);archive.setOnClickListener(v->startActivity(new Intent(this,InvoiceActivity.class)));
         LinearLayout tabs=new LinearLayout(this);tabs.setPadding(dp(10),dp(12),dp(10),dp(10));root.addView(tabs);
         String[] names={"Électricité","Gaz","Frais","Total"};
         for(int i=0;i<names.length;i++) {
