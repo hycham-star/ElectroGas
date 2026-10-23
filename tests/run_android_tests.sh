@@ -7,7 +7,7 @@ ANDROID="$TOOLS/platform/android-35/android.jar"
 ADB="${ELECTROGAS_ADB:-$TOOLS/runtime/platform-tools/adb}"
 KEY="${ELECTROGAS_KEYSTORE:-$TOOLS/electrogas-development.jks}"
 mkdir -p build/instrumentation-classes build/instrumentation-dex
-java -jar "$TOOLS/ecj.jar" -8 -encoding UTF-8 -proc:none -classpath "$ANDROID:build/classes" -d build/instrumentation-classes tests/InvoiceTests.java tests/ServiceTests.java
+java -jar "$TOOLS/ecj.jar" -8 -encoding UTF-8 -proc:none -classpath "$ANDROID:build/classes" -d build/instrumentation-classes tests/InvoiceTests.java tests/ServiceTests.java tests/AdsTests.java
 "$BT/aapt2" link -o build/instrumentation-base.apk --manifest tests/AndroidManifest.xml -I "$ANDROID"
 mapfile -t TEST_CLASSES < <(find build/instrumentation-classes -name '*.class' -print | LC_ALL=C sort)
 java -cp "$BT/lib/d8.jar" com.android.tools.r8.D8 --lib "$ANDROID" --classpath build/classes --min-api 23 --output build/instrumentation-dex "${TEST_CLASSES[@]}"
@@ -20,7 +20,7 @@ PY
 java -jar "$BT/lib/apksigner.jar" sign --ks "$KEY" --ks-key-alias electrogas --ks-pass pass:android --key-pass pass:android --out build/instrumentation.apk build/instrumentation-aligned.apk
 "$ADB" install --no-streaming -r dist/ElectroGas.apk
 "$ADB" install --no-streaming -r build/instrumentation.apk
-for SUITE in ServiceTests InvoiceTests; do
+for SUITE in ${ELECTROGAS_TEST_SUITES:-ServiceTests InvoiceTests AdsTests}; do
 "$ADB" shell am instrument -w "dz.electrogas.tests/dz.electrogas.tests.$SUITE" > "build/$SUITE.log"
 cat "build/$SUITE.log"
 python3 - "build/$SUITE.log" <<'PY'

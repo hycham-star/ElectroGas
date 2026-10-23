@@ -1,6 +1,6 @@
 # ElectroGas — Calculateur Sonelgaz
 
-Application Android native en français, hors ligne, créée à partir de `Calculateur_Facture_Sonelgaz.xlsx` fourni par l’utilisateur. Version **1.2** : électricité et gaz peuvent être activés séparément ; le carnet de factures de la version 1.1 reste disponible.
+Application Android native en français, hors ligne, créée à partir de `Calculateur_Facture_Sonelgaz.xlsx` fourni par l’utilisateur. Version **1.3** : annonces de démonstration Google facultatives et choix de confidentialité ; électricité / gaz indépendants et carnet de factures conservés.
 
 ## Installer
 
@@ -8,9 +8,9 @@ Application Android native en français, hors ligne, créée à partir de `Calcu
 
 Les fichiers installables se trouvent dans `downloads/`, avec leurs sommes SHA-256 dans `downloads/SHA256SUMS`. Après reconstruction, le nouvel APK est placé dans `dist/`.
 
-Transférez `ElectroGas.apk` sur un téléphone Android 6.0 ou plus récent, ouvrez-le et autorisez l’installation depuis cette source si Android le demande. Aucun compte, connexion Internet ou permission d’accès aux fichiers n’est nécessaire. L’APK est signé avec un certificat de développement, pas une identité de publication Google Play.
+Transférez `ElectroGas.apk` sur un téléphone Android 6.0 ou plus récent, ouvrez-le et autorisez l’installation depuis cette source si Android le demande. Aucun compte ou permission générale d’accès aux fichiers n’est nécessaire. Le calcul et le carnet fonctionnent hors ligne ; les annonces Google facultatives nécessitent Internet. L’APK est signé avec un certificat de développement, pas une identité de publication Google Play.
 
-La version 1.2 utilise la même clé que les versions 1.0 et 1.1 : installez-la **par-dessus l’ancienne version** pour conserver vos données. N’effacez pas les données de l’application et ne la désinstallez pas pour effectuer la mise à jour.
+La version 1.3 utilise la même clé que les versions 1.0 et 1.1 : installez-la **par-dessus l’ancienne version** pour conserver vos données. N’effacez pas les données de l’application et ne la désinstallez pas pour effectuer la mise à jour.
 
 ## Utilisation
 
@@ -28,6 +28,12 @@ Dans l’onglet **Gaz**, décochez **J’ai le gaz dans ce logement** si le clie
 Le même choix existe dans l’onglet **Électricité** pour une facture de gaz seule. L’énergie électrique, l’abonnement, la TVA correspondante, le droit fixe lié à la consommation électrique, le soutien État électrique et le REPE sont alors exclus. Les frais communs (habitation, prestations, timbre et durée) restent à vérifier et saisir selon la facture réelle.
 
 Le choix des services est mémorisé. Les anciennes saisies d’un service désactivé sont conservées pour une éventuelle réactivation, mais ne sont ni validées ni facturées. Une consommation de **zéro pour un service activé** conserve son abonnement : pour un service absent, il faut décocher sa case. Au moins un service doit être activé pour calculer une estimation ; le carnet de factures reste accessible dans tous les cas. Par défaut, les deux services restent activés pour préserver les estimations existantes lors de la mise à jour. La réinitialisation des valeurs d’exemple conserve le choix des services.
+
+## Annonces de test et confidentialité
+
+Les annonces sont **désactivées par défaut**. Dans le calculateur, faites défiler jusqu’à **Publicités de test · Confidentialité** pour lire l’information et activer / désactiver les tests Google. Une bannière adaptative est prévue en bas du calculateur ; aucune annonce dans les factures. Aucun revenu avec les IDs de test. Les photos, PDF, index et montants ne sont pas fournis au SDK Google.
+
+UMP est intégré, mais les messages du compte Google de démonstration ne remplacent pas votre propre configuration. Cette version comporte une exception limitée aux annonces de test après activation explicite et refuse les App IDs réelles. Ne changez pas seulement les IDs pour monétiser. Voir **[le guide AdMob](docs/ADMOB_SETUP.md)** pour créer le compte, récupérer les deux IDs et préparer le consentement avant les annonces réelles. **[Politique du prototype](PRIVACY.md)**.
 
 ## Carnet de factures
 
@@ -65,15 +71,14 @@ Cette version permet **5 factures gratuites**. La modification, la consultation,
 
 ## Reconstruire
 
-Prérequis : Linux x86_64, Java 21, Python 3, curl et keytool. Aucun Gradle, compte Android ou bibliothèque applicative externe requis.
+Prérequis : Linux x86_64, **JDK complet Java 21** (avec javac), Python 3, curl et keytool. Le wrapper télécharge Gradle 8.13 avec vérification SHA-256. AGP 8.13.2 gère les dépendances Google Mobile Ads 24.9.0 et UMP 4.0.0. Le SDK publicitaire 24 conserve Android 6 (API 23) comme minimum.
 
 ```sh
-cd /workspace/ElectroGas
 python3 tools/bootstrap.py
 bash build.sh
 ```
 
-`ELECTROGAS_TOOLS` permet de choisir un répertoire d’outils différent de `/workspace/android-tools`. Le téléchargement officiel vérifie les sommes SHA-1 publiées par Google et Maven Central et conserve la vérification TLS. Le script utilise la plateforme Android 35, les build tools 35.0.0 et le compilateur ECJ 3.39.0. Les dépendances sont hors du dépôt.
+`ELECTROGAS_TOOLS` choisit le répertoire des outils (défaut `/workspace/android-tools`). Le bootstrap vérifie les sommes officielles des outils Android 35 / ECJ. Le build prépare un SDK dans ce répertoire ; `ANDROID_HOME` peut pointer vers votre propre SDK. Un `local.properties` local est également pris en charge. Les dépendances et la clé restent hors du dépôt. Derrière un proxy, définir `GRADLE_OPTS="-Dhttps.proxyHost=... -Dhttps.proxyPort=... -Dhttp.proxyHost=... -Dhttp.proxyPort=..."` avant le build (y compris pour le téléchargement initial du wrapper) ; conserver la vérification TLS.
 
 Le build lance les tests, compile Java, crée le DEX, assemble et aligne l’APK, le signe et vérifie les signatures. L’APK et sa somme SHA-256 sont placés dans `dist/`.
 
@@ -98,7 +103,7 @@ bash build.sh
 ELECTROGAS_ADB=/chemin/vers/adb bash tests/run_android_tests.sh
 ```
 
-L’instrumentation Android lance deux suites : les services optionnels (champs vides ignorés lorsqu’un service est désactivé, récapitulatif et partage, réactivation et mémorisation) et le carnet (stockage privé, quota, modifications à la limite, PDF, sauvegarde et restauration, archives invalides, fournisseur de fichiers et parcours UI avec caméra / sélection de PDF simulées). Les préférences du calculateur sont temporairement modifiées puis restaurées. Les fichiers de test du carnet sont isolés ; une facture UI temporaire identifiée est créée puis supprimée. La caméra physique et le sélecteur système réel doivent également être essayés sur téléphone avant publication commerciale.
+L’instrumentation Android lance trois suites : les services optionnels (champs vides ignorés lorsqu’un service est désactivé, récapitulatif et partage, réactivation et mémorisation) et le carnet (stockage privé, quota, modifications à la limite, PDF, sauvegarde et restauration, archives invalides, fournisseur de fichiers et parcours UI avec caméra / sélection de PDF simulées). La suite publicitaire vérifie les tests désactivés par défaut, le refus implicite à la fermeture du dialogue, l’activation / le retrait, les callbacks tardifs, la recréation de l’activité, la réutilisation de la bannière entre onglets et les permissions réellement livrées. Elle crée une vraie AdView Google et vérifie le retrait, sans prétendre qu’une annonce a été remplie par le serveur. Les préférences du calculateur et du mode publicitaire sont temporairement modifiées puis restaurées. Les fichiers de test du carnet sont isolés ; une facture UI temporaire identifiée est créée puis supprimée. La caméra physique et le sélecteur système réel doivent également être essayés sur téléphone avant publication commerciale.
 
 Ancien test UI du calculateur (dépend du service d’accessibilité de l’émulateur) :
 
@@ -109,6 +114,9 @@ ELECTROGAS_ADB=/chemin/vers/adb python3 tests/android_smoke.py
 Ce test installe l’APK et **efface ses données sur l’appareil de test**. Il vérifie les quatre pages, le total du classeur, le recalcul après modification d’index, le refus d’un index décroissant et la conservation des valeurs après redémarrage. La capture initiale est écrite dans `build/default-screen.png`.
 
 ### Résultats observés dans l’environnement de création
+
+- Version 1.3 : **128 vérifications de calcul, 20 contrôles Android des services optionnels, 42 contrôles du carnet et 17 contrôles publicitaires réussis** sur Android 9. Le SDK Google a confirmé une requête depuis un appareil de test. Le remplissage / affichage effectif d’une annonce distante n’a pas été confirmé dans cet émulateur cloud ; UMP a signalé une erreur réseau. Cela ne valide pas un formulaire de consentement de production. Tester aussi sur un appareil récent connecté avant distribution commerciale.
+- Version 1.3 : signature conservée et APK aligné vérifiés. Les annonces restent facultatives ; les IDs réels sont refusés par ce prototype.
 
 - Version 1.2 : **20 scénarios Android des services optionnels réussis** sur Android 9 (champs vides d’un service désactivé, absence d’abonnement et de frais associés, récapitulatif et partage, réactivation et choix mémorisé).
 - Version 1.1 : **42 contrôles du carnet réussis sur Android 9**, comprenant copie privée, quota et modifications à la limite, export / import PDF, restauration additive et idempotente, rejet des archives invalides et des chemins dangereux, lecture seule des exports, réouverture photo sans troncature, caméra et sélecteur PDF simulés dans l’UI, affichage avec zoom et relecture des données enregistrées.

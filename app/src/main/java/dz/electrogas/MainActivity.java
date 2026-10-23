@@ -26,6 +26,7 @@ public class MainActivity extends Activity {
     private LinearLayout body, root;
     private TextView amount, status;
     private SharedPreferences prefs;
+    private TestAds ads;
     private int page=0;
     private boolean electricityEnabled=true,gasEnabled=true;
 
@@ -36,7 +37,9 @@ public class MainActivity extends Activity {
         electricityEnabled=prefs.getBoolean("electricityEnabled",true);gasEnabled=prefs.getBoolean("gasEnabled",true);
         for(int i=0;i<raw.length;i++) raw[i]=prefs.getString(Calculator.KEYS[i],plain(Calculator.DEFAULTS[i]));
         page=state==null?prefs.getInt("page",0):state.getInt("page",0);
+        ads=new TestAds(this);
         render();
+        ads.start();
     }
     @Override protected void onSaveInstanceState(Bundle out) { super.onSaveInstanceState(out); out.putInt("page",page); }
     private int dp(float v) { return (int)(v*getResources().getDisplayMetrics().density+.5f); }
@@ -88,13 +91,19 @@ public class MainActivity extends Activity {
         body=vertical();body.setPadding(dp(16),dp(6),dp(16),dp(24));scroll.addView(body);
         if(page==0) electricity(); else if(page==1) gas(); else if(page==2) fees(); else summary();
         LinearLayout foot=card();
-        foot.addView(text("Vos données restent sur cet appareil.",12,MUTED,false));
+        foot.addView(text("Vos factures restent sur cet appareil, sauf partage ou sauvegarde choisi par vous.",12,MUTED,false));
+        Button adSettings=button("Publicités de test · Confidentialité",false);adSettings.setTag("ads.settings");foot.addView(adSettings);adSettings.setOnClickListener(v->ads.settings());
         Button about=button("À propos du calcul",false);foot.addView(about);about.setOnClickListener(v->about());
         Button reset=button("Réinitialiser les valeurs d’exemple",false);LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);rp.topMargin=dp(10);foot.addView(reset,rp);
         reset.setOnClickListener(v->new AlertDialog.Builder(this).setTitle("Réinitialiser ?").setMessage("Vos saisies seront remplacées par les valeurs du fichier Excel.")
             .setNegativeButton("Annuler",null).setPositiveButton("Réinitialiser",(d,w)->{for(int i=0;i<raw.length;i++)raw[i]=plain(Calculator.DEFAULTS[i]);save();render();}).show());
+        LinearLayout adSlot=vertical();adSlot.setTag("ads.slot");
+        adSlot.setPadding(dp(12),dp(12),dp(12),dp(6));root.addView(adSlot,new LinearLayout.LayoutParams(-1,-2));ads.attach(adSlot);
         update();
     }
+    @Override protected void onResume(){super.onResume();if(ads!=null)ads.resume();}
+    @Override protected void onPause(){if(ads!=null)ads.pause();super.onPause();}
+    @Override protected void onDestroy(){if(ads!=null)ads.destroy();super.onDestroy();}
     @SuppressWarnings("deprecation") private void applyLegacyInsets(WindowInsets insets) {
         root.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());
     }
